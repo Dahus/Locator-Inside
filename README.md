@@ -34,7 +34,8 @@ A Blender addon that visualizes the **Center of Mass** of an armature in real ti
 
 ## Requirements
 
-- Blender 4.0 or newer
+- Blender 5.0 or newer
+- Tested on Blender 5.0 and 5.1
 
 ## License
 
