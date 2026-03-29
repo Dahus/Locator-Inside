@@ -1,6 +1,6 @@
 bl_info = {
     "name": "COM Locator",
-    "author": "Твоё имя",
+    "author": "Dahus",
     "version": (1, 0, 0),
     "blender": (4, 0, 0),
     "location": "View3D > Sidebar > COM Locator",
