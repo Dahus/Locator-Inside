@@ -19,9 +19,9 @@ A Blender addon that visualizes the **Center of Mass** of an armature in real ti
 
 ## Installation
 
-1. Download `__init__.py`
+1. Download `com_locator.zip` from [Releases](../../releases)
 2. In Blender: **Edit → Preferences → Add-ons → Install**
-3. Select the downloaded file
+3. Select the downloaded `.zip` file
 4. Enable the addon by checking the checkbox
 
 ## Usage
