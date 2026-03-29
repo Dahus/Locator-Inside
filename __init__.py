@@ -1,3 +1,14 @@
+bl_info = {
+    "name": "COM Locator",
+    "author": "Твоё имя",
+    "version": (1, 0, 0),
+    "blender": (4, 0, 0),
+    "location": "View3D > Sidebar > COM Locator",
+    "description": "Center of Mass locator with support plane",
+    "category": "Animation",
+}
+
+
 import bpy
 from mathutils import Vector
 from bpy.app.handlers import persistent
@@ -21,13 +32,6 @@ class BoneItem(PropertyGroup):
     name: StringProperty(
         name="Bone Name",
         description="Имя кости"
-    )
-    weight: FloatProperty(
-        name="Weight",
-        description="Вес кости для расчета центра масс",
-        default=1.0,
-        min=0.0,
-        max=10.0
     )
     weight: FloatProperty(
         name="Weight",
@@ -616,8 +620,7 @@ def update_com_locator(scene):
             # Позиционируем локатор
             if plane_z is not None:
                 # Есть плоскость - ставим стрелку так, чтобы кончик касался плоскости
-                arrow_length = locator.empty_display_size
-                locator.location = Vector((com_position.x, com_position.y, plane_z + arrow_length))
+                locator.location = Vector((com_position.x, com_position.y, plane_z + 1.0))
             else:
                 # Нет плоскости - просто ставим локатор в центр масс
                 locator.location = com_position
@@ -640,24 +643,61 @@ def create_com_locator(locator_name):
     
     bpy.ops.object.select_all(action='DESELECT')
     
-    bpy.ops.object.empty_add(type='SINGLE_ARROW', rotation=(3.14159, 0, 0))
-    locator = bpy.context.active_object
-    locator.name = locator_name
-    locator.show_name = False
-    locator.empty_display_size = 1.0
+    # Стрелка мешем: стержень + конус на конце
+    verts = [
+        # Стержень
+        (-0.02, -0.02,  0.0),  # 0
+        ( 0.02, -0.02,  0.0),  # 1
+        ( 0.02,  0.02,  0.0),  # 2
+        (-0.02,  0.02,  0.0),  # 3
+        (-0.02, -0.02, -0.7),  # 4
+        ( 0.02, -0.02, -0.7),  # 5
+        ( 0.02,  0.02, -0.7),  # 6
+        (-0.02,  0.02, -0.7),  # 7
+        # Основание конуса
+        (-0.07, -0.07, -0.7),  # 8
+        ( 0.07, -0.07, -0.7),  # 9
+        ( 0.07,  0.07, -0.7),  # 10
+        (-0.07,  0.07, -0.7),  # 11
+        # Кончик вниз
+        (0.0, 0.0, -1.0),      # 12
+    ]
+    faces = [
+        # Стержень
+        (0,1,2,3),  # низ
+        (0,1,5,4),
+        (1,2,6,5),
+        (2,3,7,6),
+        (3,0,4,7),
+        # Основание конуса
+        (8,9,10,11),
+        # Грани конуса
+        (8,9,12),
+        (9,10,12),
+        (10,11,12),
+        (11,8,12),
+    ]
+    
+    mesh = bpy.data.meshes.new(locator_name + "_mesh")
+    mesh.from_pydata(verts, [], faces)
+    mesh.update()
+    
+    locator = bpy.data.objects.new(locator_name, mesh)
+    
+    # Оранжевый материал
+    mat = bpy.data.materials.new(name="COM_Locator_Material")
+    mat.use_nodes = True
+    bsdf = mat.node_tree.nodes.get('Principled BSDF')
+    if bsdf:
+        bsdf.inputs['Base Color'].default_value = (1.0, 0.4, 0.0, 1.0)
+        bsdf.inputs['Emission Color'].default_value = (1.0, 0.4, 0.0, 1.0)
+        bsdf.inputs['Emission Strength'].default_value = 3.0
+    mesh.materials.append(mat)
+    
     locator.show_in_front = True
+    locator.show_name = False
     
-    if hasattr(locator, 'color'):
-        locator.color = (0.0, 1.0, 0.0, 1.0)
-    
-    # Перемещаем в COM коллекцию
     com_collection = get_or_create_com_collection()
-    
-    # Удаляем из всех текущих коллекций
-    for coll in locator.users_collection:
-        coll.objects.unlink(locator)
-    
-    # Добавляем в COM коллекцию
     com_collection.objects.link(locator)
     
     return locator
